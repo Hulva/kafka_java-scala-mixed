@@ -25,7 +25,7 @@ import scala.collection.{Seq, Set, mutable}
 class ControllerContext {
   val stats = new ControllerStats
 
-  var controllerChannelManager: ControllerChannelManager = null
+  var controllerChannelManager: ControllerChannelManager = _
 
   var shuttingDownBrokerIds: mutable.Set[Int] = mutable.Set.empty
   var epoch: Int = KafkaController.InitialControllerEpoch
@@ -93,13 +93,13 @@ class ControllerContext {
   }
 
   // getter
-  def liveBrokers = liveBrokersUnderlying.filter(broker => !shuttingDownBrokerIds.contains(broker.id))
-  def liveBrokerIds = liveBrokerIdAndEpochsUnderlying.keySet -- shuttingDownBrokerIds
+  def liveBrokers: Set[Broker] = liveBrokersUnderlying.filter(broker => !shuttingDownBrokerIds.contains(broker.id))
+  def liveBrokerIds: Predef.Set[Int] = liveBrokerIdAndEpochsUnderlying.keySet -- shuttingDownBrokerIds
 
-  def liveOrShuttingDownBrokerIds = liveBrokerIdAndEpochsUnderlying.keySet
-  def liveOrShuttingDownBrokers = liveBrokersUnderlying
+  def liveOrShuttingDownBrokerIds: Predef.Set[Int] = liveBrokerIdAndEpochsUnderlying.keySet
+  def liveOrShuttingDownBrokers: Set[Broker] = liveBrokersUnderlying
 
-  def liveBrokerIdAndEpochs = liveBrokerIdAndEpochsUnderlying
+  def liveBrokerIdAndEpochs: Map[Int, Long] = liveBrokerIdAndEpochsUnderlying
 
   def partitionsOnBroker(brokerId: Int): Set[TopicPartition] = {
     partitionReplicaAssignmentUnderlying.flatMap {

@@ -107,50 +107,52 @@ class KafkaServer(val config: KafkaConfig, time: Time = Time.SYSTEM, threadNameP
 
   private val jmxPrefix: String = "kafka.server"
 
-  private var logContext: LogContext = null
+  private var logContext: LogContext = _
 
-  var metrics: Metrics = null
+  var metrics: Metrics = _
 
   val brokerState: BrokerState = new BrokerState
 
-  var dataPlaneRequestProcessor: KafkaApis = null
-  var controlPlaneRequestProcessor: KafkaApis = null
+  var dataPlaneRequestProcessor: KafkaApis = _
+  var controlPlaneRequestProcessor: KafkaApis = _
 
   var authorizer: Option[Authorizer] = None
-  var socketServer: SocketServer = null
-  var dataPlaneRequestHandlerPool: KafkaRequestHandlerPool = null
-  var controlPlaneRequestHandlerPool: KafkaRequestHandlerPool = null
+  var socketServer: SocketServer = _
+  var dataPlaneRequestHandlerPool: KafkaRequestHandlerPool = _
+  var controlPlaneRequestHandlerPool: KafkaRequestHandlerPool = _
 
-  var logDirFailureChannel: LogDirFailureChannel = null
-  var logManager: LogManager = null
+  var logDirFailureChannel: LogDirFailureChannel = _
+  var logManager: LogManager = _
 
-  var replicaManager: ReplicaManager = null
-  var adminManager: AdminManager = null
-  var tokenManager: DelegationTokenManager = null
+  var replicaManager: ReplicaManager = _
+  var adminManager: AdminManager = _
+  var tokenManager: DelegationTokenManager = _
 
-  var dynamicConfigHandlers: Map[String, ConfigHandler] = null
-  var dynamicConfigManager: DynamicConfigManager = null
-  var credentialProvider: CredentialProvider = null
-  var tokenCache: DelegationTokenCache = null
+  var dynamicConfigHandlers: Map[String, ConfigHandler] = _
+  var dynamicConfigManager: DynamicConfigManager = _
+  var credentialProvider: CredentialProvider = _
+  var tokenCache: DelegationTokenCache = _
 
-  var groupCoordinator: GroupCoordinator = null
+  var groupCoordinator: GroupCoordinator = _
 
-  var transactionCoordinator: TransactionCoordinator = null
+  var transactionCoordinator: TransactionCoordinator = _
 
-  var kafkaController: KafkaController = null
+  var kafkaController: KafkaController = _
 
-  var kafkaScheduler: KafkaScheduler = null
+  var kafkaScheduler: KafkaScheduler = _
 
-  var metadataCache: MetadataCache = null
-  var quotaManagers: QuotaFactory.QuotaManagers = null
+  var metadataCache: MetadataCache = _
+  var quotaManagers: QuotaFactory.QuotaManagers = _
 
-  private var _zkClient: KafkaZkClient = null
+  private var _zkClient: KafkaZkClient = _
   val correlationId: AtomicInteger = new AtomicInteger(0)
   val brokerMetaPropsFile = "meta.properties"
-  val brokerMetadataCheckpoints = config.logDirs.map(logDir => (logDir, new BrokerMetadataCheckpoint(new File(logDir + File.separator + brokerMetaPropsFile)))).toMap
+  val brokerMetadataCheckpoints: Predef.Map[String, BrokerMetadataCheckpoint] = {
+    config.logDirs.map(logDir => (logDir, new BrokerMetadataCheckpoint(new File(logDir + File.separator + brokerMetaPropsFile)))).toMap
+  }
 
-  private var _clusterId: String = null
-  private var _brokerTopicStats: BrokerTopicStats = null
+  private var _clusterId: String = _
+  private var _brokerTopicStats: BrokerTopicStats = _
 
 
   def clusterId: String = _clusterId
@@ -163,21 +165,21 @@ class KafkaServer(val config: KafkaConfig, time: Time = Time.SYSTEM, threadNameP
   newGauge(
     "BrokerState",
     new Gauge[Int] {
-      def value = brokerState.currentState
+      def value: Int = brokerState.currentState
     }
   )
 
   newGauge(
     "ClusterId",
     new Gauge[String] {
-      def value = clusterId
+      def value: String = clusterId
     }
   )
 
   newGauge(
     "yammer-metrics-count",
     new Gauge[Int] {
-      def value = {
+      def value: Int = {
         com.yammer.metrics.Metrics.defaultRegistry.allMetrics.size
       }
     }
@@ -367,8 +369,10 @@ class KafkaServer(val config: KafkaConfig, time: Time = Time.SYSTEM, threadNameP
       else None
     }
 
-    val secureAclsEnabled = config.zkEnableSecureAcls
-    val isZkSecurityEnabled = JaasUtils.isZkSecurityEnabled()
+    val secureAclsEnabled: Boolean = {
+      config.zkEnableSecureAcls
+    }
+    val isZkSecurityEnabled = JaasUtils.isZkSecurityEnabled
 
     if (secureAclsEnabled && !isZkSecurityEnabled)
       throw new java.lang.SecurityException(s"${KafkaConfig.ZkEnableSecureAclsProp} is true, but the verification of the JAAS login file failed.")
@@ -387,7 +391,7 @@ class KafkaServer(val config: KafkaConfig, time: Time = Time.SYSTEM, threadNameP
   }
 
   private def getOrGenerateClusterId(zkClient: KafkaZkClient): String = {
-    zkClient.getClusterId.getOrElse(zkClient.createOrGetClusterId(CoreUtils.generateUuidAsBase64))
+    zkClient.getClusterId.getOrElse(zkClient.createOrGetClusterId(CoreUtils.generateUuidAsBase64()))
   }
 
   private[server] def createBrokerInfo: BrokerInfo = {
@@ -428,7 +432,7 @@ class KafkaServer(val config: KafkaConfig, time: Time = Time.SYSTEM, threadNameP
     def doControlledShutdown(retries: Int): Boolean = {
       val metadataUpdater = new ManualMetadataUpdater()
       val networkClient = {
-        val channelBuilder = ChannelBuilders.clientChannelBuilder(
+        var channelBuilder = ChannelBuilders.clientChannelBuilder(
           config.interBrokerSecurityProtocol,
           JaasContext.Type.SERVER,
           config,
@@ -442,10 +446,10 @@ class KafkaServer(val config: KafkaConfig, time: Time = Time.SYSTEM, threadNameP
           metrics,
           time,
           "kafka-server-controlled-shutdown",
-          Map.empty.asJava,
+          new util.HashMap(),
           false,
-          channelBuilder,
-          logContext
+          channelBuilder = channelBuilder,
+          logContext = logContext
         )
         new NetworkClient(
           selector,
@@ -664,7 +668,7 @@ class KafkaServer(val config: KafkaConfig, time: Time = Time.SYSTEM, threadNameP
    */
   def awaitShutdown(): Unit = shutdownLatch.await()
 
-  def getLogManager(): LogManager = logManager
+  def getLogManager: LogManager = logManager
 
   def boundPort(listenerName: ListenerName): Int = socketServer.boundPort(listenerName)
 

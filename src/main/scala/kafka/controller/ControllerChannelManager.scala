@@ -37,7 +37,6 @@ import org.apache.kafka.common.utils.{LogContext, Time}
 import org.apache.kafka.common.{KafkaException, Node, TopicPartition}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.HashMap
 import scala.collection.{Set, mutable}
 
 object ControllerChannelManager {
@@ -48,7 +47,9 @@ object ControllerChannelManager {
 class ControllerChannelManager(controllerContext: ControllerContext, config: KafkaConfig, time: Time, metrics: Metrics,
                                stateChangeLogger: StateChangeLogger, threadNamePrefix: Option[String] = None) extends Logging with KafkaMetricsGroup {
   import ControllerChannelManager._
-  protected val brokerStateInfo = new HashMap[Int, ControllerBrokerStateInfo]
+  protected val brokerStateInfo: mutable.HashMap[Int, ControllerBrokerStateInfo] = {
+    new mutable.HashMap[Int, ControllerBrokerStateInfo]
+  }
   private val brokerLock = new Object
   this.logIdent = "[Channel manager on controller " + config.brokerId + "]: "
 
@@ -63,13 +64,13 @@ class ControllerChannelManager(controllerContext: ControllerContext, config: Kaf
 
   controllerContext.liveBrokers.foreach(addNewBroker)
 
-  def startup() = {
+  def startup(): Unit = {
     brokerLock synchronized {
       brokerStateInfo.foreach(brokerState => startRequestSendThread(brokerState._1))
     }
   }
 
-  def shutdown() = {
+  def shutdown(): Unit = {
     brokerLock synchronized {
       brokerStateInfo.values.foreach(removeExistingBroker)
     }
@@ -304,7 +305,7 @@ class RequestSendThread(val controllerId: Int,
 }
 
 class ControllerBrokerRequestBatch(controller: KafkaController, stateChangeLogger: StateChangeLogger) extends  Logging {
-  val controllerContext = controller.controllerContext
+  val controllerContext: ControllerContext = controller.controllerContext
   val controllerId: Int = controller.config.brokerId
   val leaderAndIsrRequestMap = mutable.Map.empty[Int, mutable.Map[TopicPartition, LeaderAndIsrRequest.PartitionState]]
   val stopReplicaRequestMap = mutable.Map.empty[Int, Seq[StopReplicaRequestInfo]]

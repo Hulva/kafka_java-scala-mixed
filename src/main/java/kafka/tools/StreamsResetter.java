@@ -102,8 +102,6 @@ public class StreamsResetter {
     private static OptionSpec<String> fromFileOption;
     private static OptionSpec<Long> shiftByOption;
     private static OptionSpecBuilder dryRunOption;
-    private static OptionSpecBuilder helpOption;
-    private static OptionSpecBuilder executeOption;
     private static OptionSpec<String> commandConfigOption;
 
     private static String usage = "This tool helps to quickly reset an application in order to reprocess "
@@ -236,9 +234,9 @@ public class StreamsResetter {
             .withRequiredArg()
             .ofType(String.class)
             .describedAs("file name");
-        executeOption = optionParser.accepts("execute", "Execute the command.");
+        OptionSpecBuilder executeOption = optionParser.accepts("execute", "Execute the command.");
         dryRunOption = optionParser.accepts("dry-run", "Display the actions that would be performed without executing the reset commands.");
-        helpOption = optionParser.accepts("help", "Print usage information.");
+        OptionSpecBuilder helpOption = optionParser.accepts("help", "Print usage information.");
 
         // TODO: deprecated in 1.0; can be removed eventually: https://issues.apache.org/jira/browse/KAFKA-7606
         optionParser.accepts("zookeeper", "Zookeeper option is deprecated by bootstrap.servers, as the reset tool would no longer access Zookeeper directly.");
@@ -257,7 +255,7 @@ public class StreamsResetter {
             CommandLineUtils.printUsageAndDie(optionParser, "Only one of --dry-run and --execute can be specified");
         }
 
-        final scala.collection.immutable.HashSet<OptionSpec<?>> allScenarioOptions = new scala.collection.immutable.HashSet<OptionSpec<?>>();
+        final scala.collection.immutable.HashSet<OptionSpec<?>> allScenarioOptions = new scala.collection.immutable.HashSet<>();
         allScenarioOptions.$plus(toOffsetOption);
         allScenarioOptions.$plus(toDatetimeOption);
         allScenarioOptions.$plus(byDurationOption);
@@ -386,9 +384,9 @@ public class StreamsResetter {
     }
 
     // visible for testing
-    public void maybeSeekToEnd(final String groupId,
-                               final Consumer<byte[], byte[]> client,
-                               final Set<TopicPartition> intermediateTopicPartitions) {
+    private void maybeSeekToEnd(final String groupId,
+                                final Consumer<byte[], byte[]> client,
+                                final Set<TopicPartition> intermediateTopicPartitions) {
         if (intermediateTopicPartitions.size() > 0) {
             System.out.println("Following intermediate topics offsets will be reset to end (for consumer group " + groupId + ")");
             for (final TopicPartition topicPartition : intermediateTopicPartitions) {
@@ -439,9 +437,9 @@ public class StreamsResetter {
     }
 
     // visible for testing
-    public void resetOffsetsFromResetPlan(final Consumer<byte[], byte[]> client,
-                                          final Set<TopicPartition> inputTopicPartitions,
-                                          final Map<TopicPartition, Long> topicPartitionsAndOffset) {
+    private void resetOffsetsFromResetPlan(final Consumer<byte[], byte[]> client,
+                                           final Set<TopicPartition> inputTopicPartitions,
+                                           final Map<TopicPartition, Long> topicPartitionsAndOffset) {
         final Map<TopicPartition, Long> endOffsets = client.endOffsets(inputTopicPartitions);
         final Map<TopicPartition, Long> beginningOffsets = client.beginningOffsets(inputTopicPartitions);
 
@@ -494,9 +492,9 @@ public class StreamsResetter {
     }
 
     // visible for testing
-    public void shiftOffsetsBy(final Consumer<byte[], byte[]> client,
-                               final Set<TopicPartition> inputTopicPartitions,
-                               final long shiftBy) {
+    private void shiftOffsetsBy(final Consumer<byte[], byte[]> client,
+                                final Set<TopicPartition> inputTopicPartitions,
+                                final long shiftBy) {
         final Map<TopicPartition, Long> endOffsets = client.endOffsets(inputTopicPartitions);
         final Map<TopicPartition, Long> beginningOffsets = client.beginningOffsets(inputTopicPartitions);
 
@@ -516,9 +514,9 @@ public class StreamsResetter {
     }
 
     // visible for testing
-    public void resetOffsetsTo(final Consumer<byte[], byte[]> client,
-                               final Set<TopicPartition> inputTopicPartitions,
-                               final Long offset) {
+    private void resetOffsetsTo(final Consumer<byte[], byte[]> client,
+                                final Set<TopicPartition> inputTopicPartitions,
+                                final Long offset) {
         final Map<TopicPartition, Long> endOffsets = client.endOffsets(inputTopicPartitions);
         final Map<TopicPartition, Long> beginningOffsets = client.beginningOffsets(inputTopicPartitions);
 
@@ -536,7 +534,7 @@ public class StreamsResetter {
     }
 
     // visible for testing
-    public long getDateTime(String timestamp) throws ParseException {
+    private long getDateTime(String timestamp) throws ParseException {
         final String[] timestampParts = timestamp.split("T");
         if (timestampParts.length < 2) {
             throw new ParseException("Error parsing timestamp. It does not contain a 'T' according to ISO8601 format", timestamp.length());
@@ -634,7 +632,7 @@ public class StreamsResetter {
     }
 
     // visible for testing
-    public void doDelete(final List<String> topicsToDelete,
+    private void doDelete(final List<String> topicsToDelete,
                           final AdminClient adminClient) {
         boolean hasDeleteErrors = false;
         final DeleteTopicsResult deleteTopicsResult = adminClient.deleteTopics(topicsToDelete);

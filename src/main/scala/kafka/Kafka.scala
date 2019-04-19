@@ -20,13 +20,12 @@ package kafka
 import java.util.Properties
 
 import joptsimple.OptionParser
-import kafka.utils.Implicits._
 import kafka.server.{KafkaServer, KafkaServerStartable}
+import kafka.utils.Implicits._
 import kafka.utils.{CommandLineUtils, Exit, Logging}
 import org.apache.kafka.common.utils.{Java, LoggingSignalHandler, OperatingSystem, Utils}
 
 import scala.collection.JavaConverters._
-import java.nio.file.Paths
 
 object Kafka extends Logging {
 
@@ -37,9 +36,8 @@ object Kafka extends Logging {
       .ofType(classOf[String])
 
     if (args.length == 0) {
-      CommandLineUtils.printUsageAndDie(optionParser, "USAGE: java [options] %s server.properties [--override property=value]*".format(classOf[KafkaServer].getSimpleName()))
+      CommandLineUtils.printUsageAndDie(optionParser, "USAGE: java [options] %s server.properties [--override property=value]*".format(classOf[KafkaServer].getSimpleName))
     }
-    System.out.println(Paths.get("./").toAbsolutePath())
 
     val props = Utils.loadProps(args(0))
 
@@ -70,7 +68,7 @@ object Kafka extends Logging {
       }
 
       // attach shutdown handler to catch terminating signals as well as normal termination
-      Runtime.getRuntime().addShutdownHook(new Thread("kafka-shutdown-hook") {
+      Runtime.getRuntime.addShutdownHook(new Thread("kafka-shutdown-hook") {
         override def run(): Unit = kafkaServerStartable.shutdown()
       })
 
